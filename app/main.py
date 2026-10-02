@@ -9,11 +9,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-FRONTEND_URLS = [
-    url.strip()
+FRONTEND_URLS = {
+    url.strip().rstrip("/")
     for url in os.getenv("FRONTEND_URLS", "").split(",")
     if url.strip()
-]
+}
+
+# Keep the deployed client available even if FRONTEND_URLS is not set in the
+# hosting environment. Additional origins can still be supplied through the
+# environment variable (for example, local development or a preview URL).
+FRONTEND_URLS.add("https://extracke.vercel.app")
 
 
 @asynccontextmanager
@@ -35,7 +40,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        *FRONTEND_URLS,
+        *sorted(FRONTEND_URLS),
     ],
     allow_credentials=True,
     allow_methods=["*"],

@@ -82,7 +82,10 @@ def user_login(
         raise HTTPException(status_code=401,detail="email or password invalid")
 
     role = existing_user["role"]
-    if ADMIN_EMAIL and user.username.strip().lower() == ADMIN_EMAIL.strip().lower():
+    # UserLogin identifies the account by email.  Referencing ``username``
+    # here raises AttributeError after a valid password, which becomes a
+    # generic 500 response and is surfaced by browsers as a CORS failure.
+    if ADMIN_EMAIL and user.email.strip().lower() == ADMIN_EMAIL.strip().lower():
         role = "admin"
         cursor.execute("""
             UPDATE users
