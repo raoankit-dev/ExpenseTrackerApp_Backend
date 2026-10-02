@@ -4,7 +4,7 @@ import sqlite3
 from dotenv import load_dotenv
 from pwdlib import PasswordHash
 from fastapi.security import OAuth2PasswordBearer
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException,status
 from app.database.connection import get_db
 
 ph = PasswordHash.recommended()
@@ -81,3 +81,14 @@ def get_current_user(token : str = Depends(oauth2_scheme),db : sqlite3.Connectio
         raise HTTPException(status_code=401,detail="User not found")
     
     return dict(user)
+
+
+def get_current_admin(admin : dict = Depends(get_current_user)):
+
+    if admin["role"] != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    
+    return admin

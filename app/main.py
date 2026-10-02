@@ -1,9 +1,19 @@
+import os
 from fastapi import FastAPI
 from app.routers.v1.api import api_routes
 from contextlib import asynccontextmanager
 from app.database.init_db import create_tables
 from app.core.exceptions import global_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+load_dotenv()
+
+FRONTEND_URLS = [
+    url.strip()
+    for url in os.getenv("FRONTEND_URLS", "").split(",")
+    if url.strip()
+]
 
 
 @asynccontextmanager
@@ -25,6 +35,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        *FRONTEND_URLS,
     ],
     allow_credentials=True,
     allow_methods=["*"],

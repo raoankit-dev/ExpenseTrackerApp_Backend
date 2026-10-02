@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from fastapi import APIRouter,Depends, HTTPException
 from app.schemas.user import UserCreate,UserLogin
 import sqlite3
@@ -5,6 +7,10 @@ from app.auth.security import hash_password, verify_password,create_access_token
 from app.database.connection import get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from app.schemas.response import MessageResponse,LoginResponse,DataResponse
+
+load_dotenv()
+
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 
 
 router = APIRouter(
@@ -61,6 +67,7 @@ def user_login(
     if user_exists is None:
         raise HTTPException(status_code=401,detail="email or password invalid")
     
+    
     cursor.execute("""
         SELECT * 
         FROM users
@@ -73,8 +80,18 @@ def user_login(
 
     if not is_valid_password:
         raise HTTPException(status_code=401,detail="email or password invalid")
+
+    role = existing_user["role"]
+    if ADMIN_EMAIL and user.username.strip().lower() == ADMIN_EMAIL.strip().lower():
+        role = "admin"
+        cursor.execute("""
+            UPDATE users
+            SET role = 'admin'
+            WHERE id = ?
+        """,(existing_user["id"],))
+        db.commit()
     
-    token = create_access_token(existing_user["id"],existing_user["role"])
+    token = create_access_token(existing_user["id"],role)
 
 
     return {
